@@ -23,9 +23,10 @@
  * @author  Luca Joos
  * @date    2018-11-28
  */
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
+#include <string.h>
 
 #include <openssl/sha.h>
 
@@ -74,9 +75,11 @@ int register_user()
         printf("Please enter a valid username (A-Za-z0-9, max. 10 characters)");
         printf("\n >  ");
         scanf("%s", username);
-        for (i = 0; i < strlen(username); i++) {
-            if (!isalnum(username[i]) && strlen(username) < 11) {
-                printf
+        if (strlen(username) > 10) {
+            for (i = 0; i < strlen(username); i++) {
+                if (!isalnum(username[i]) ) {
+                    printf("not a valid username");
+                }
             }
         }
 
