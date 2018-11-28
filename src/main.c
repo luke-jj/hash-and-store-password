@@ -30,10 +30,13 @@
 
 #include <openssl/sha.h>
 
-#define ROWS_MAX 100
-
 /*
  * Simple demo program that demonstrates hashing and storing a user-password.
+ * Cesar-Cipher vs SHA-256 vs bcrypt
+ *
+ * WARNING: This program does intentionally not implement error handling
+ * such as checking whether a file was opened correctly, user input is valid,
+ * or memory was allocated/deallocated correctly.
  *
  * openssl instructions:
  * 1. download and install the latest version from https://www.openssl.org
@@ -41,7 +44,12 @@
  *      cd /usr/local/include
  *      ln -s ../opt/openssl/include/openssl .
  */
+#define ROWS_MAX 100
 
+/*
+ * The following three data structures are used to persist user data
+ * in a file on the local disk.
+ */
 struct Userdata {
     int     id;
     char    username[11];
@@ -57,26 +65,70 @@ struct Connection {
     struct Database     *db;
 };
 
+
+
+/*
+ * Open connection to the database file
+ */
+struct Connection *connect(const char *filename)
+{
+    struct Connection *connection = malloc(sizeof(struct Connection));
+    connection->db = malloc(sizeof(struct Database));
+    connection->file = fopen(filename, "r+");
+
+    return connection;
+}
+
+
+char *Userdata_tostring(struct Userdata *data)
+{
+    char *format_string;
+    sprintf(format_string,
+            "%d,%s,%s\n",
+            data->id,
+            data->username,
+            data->password);
+    return format_string;
+}
+
+
+
+
+
+/* TODO: open connection */
+
+
+void store(char *username, char *encrypted_password)
+{
+}
+
+
+/*
+ * Hashing the input with cesars cipher.
+ */
+char *hash(char *password)
+{
+    char *cipher = malloc(sizeof(password));
+    // caesar-cipher just for fun ^_^
+    for (int i = 0; i < strlen(password); i++) {
+        cipher[i] = password[i] + 1;
+    }
+    return cipher;
+}
+
+/*
+ * fully functional on unix compatible systems and shells
+ * limited support for windows
+ */
 void clear_screen()
 {
     printf("\033[H\033[2J");
 }
 
 /*
- *
+ * main menu feature that guides the user through creating a new login
+ * @return      int     standard error code
  */
-unsigned char hash_password(char *password)
-{
-    SHA256_CTX context;
-    unsigned char final_hash[SHA256_DIGEST_LENGTH];
-
-    SHA256_Init(&context);
-    SHA256_Update(&context, password, strlen(password));
-    SHA256_Final(final_hash, &context);
-
-    return final_hash;
-}
-
 int register_user()
 {
     char    username[256];
@@ -123,22 +175,31 @@ int register_user()
         }
     }
     if (username_is_valid && password_is_valid) {
-        hash_password(password);
-
+        char *hashed_password = hash(password);
+        store(username, hashed_password);
         printf("Success! You can now login with username: %s\n", username);
+        scanf(" %s", username);
     }
 
+    free(hashed_password);
     return 0;
 }
 
+/*
+ * main-menu feature that asks for and validates a users login details
+ * @return      int     standard error code
+ */
 int login()
 {
     return 0;
 }
 
+/*
+ * print the main menu on screen and parse user input
+ */
 void main_menu()
 {
-    char *login_name = "--";
+    char login_name[32] = "--";
     char user_input;
 
     while(1) {
