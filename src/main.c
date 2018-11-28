@@ -68,10 +68,12 @@ struct Connection {
 
 
 
-
+/***********************************
+ * Stream & Connectivity Functions *
+ ***********************************/
 
 /*
- * Open connection to the database file
+ * Open connection to the database file and initialize file stream
  * @param       *char           path to the database file
  * @return      *Connection     fully initialized connection
  */
@@ -127,8 +129,6 @@ void Database_close(struct Connection *connection)
 
 
 
-
-
 /*******************************
  * CRUD functions for database *
  * - append                    *
@@ -154,7 +154,17 @@ void Database_append(struct Connection *connection, char *user, char *pass)
 
 
 
-
+/*
+ * Hashing the input with caesars cipher.
+ */
+char *hash(char *password)
+{
+    char *cipher = malloc(sizeof(password));
+    for (int i = 0; i < strlen(password); i++) {
+        cipher[i] = password[i] + 1;
+    }
+    return cipher;
+}
 
 /*
  * Store new user registration details in database
@@ -166,19 +176,6 @@ void store(char *username, char *password)
     Database_append(connection, username, password);
     Database_write(connection);
     Database_close(connection);
-}
-
-
-/*
- * Hashing the input with caesars cipher.
- */
-char *hash(char *password)
-{
-    char *cipher = malloc(sizeof(password));
-    for (int i = 0; i < strlen(password); i++) {
-        cipher[i] = password[i] + 1;
-    }
-    return cipher;
 }
 
 /*
@@ -292,7 +289,7 @@ void main_menu()
         printf("You are logged in as:  %s\n", login_name);
         printf("Register new user: [R]\n");
         printf("Log-in as existing user: [L]\n");
-        printf("Create new database (deletes old records): [C]\n");
+        printf("Reset and re-initialize database (deletes old records): [C]\n");
         printf("Exit: [Q]\n");
         printf(" >  ");
         scanf(" %c", &user_input);
