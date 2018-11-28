@@ -70,6 +70,7 @@ struct Connection {
 
 /***********************************
  * Stream & Connectivity Functions *
+ *                                 *
  ***********************************/
 
 /*
@@ -129,10 +130,11 @@ void Database_close(struct Connection *connection)
 
 
 
-/*******************************
- * CRUD functions for database *
- * - append                    *
- *******************************/
+/***********************************
+ * CRUD functions for database     *
+ * - append                        *
+ * - TODO: implement linear search *
+ ***********************************/
 
 /*
  * append newly registered user data to loaded database
