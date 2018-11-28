@@ -82,7 +82,7 @@ struct Connection *connect(const char *filename)
 
 char *Userdata_tostring(struct Userdata *data)
 {
-    char *format_string;
+    char *format_string = malloc(sizeof(char) * 32);
     sprintf(format_string,
             "%d,%s,%s\n",
             data->id,
@@ -175,13 +175,15 @@ int register_user()
         }
     }
     if (username_is_valid && password_is_valid) {
-        char *hashed_password = hash(password);
+        char    *hashed_password;
+
+        hashed_password = hash(password);
         store(username, hashed_password);
         printf("Success! You can now login with username: %s\n", username);
         scanf(" %s", username);
+        free(hashed_password);
     }
 
-    free(hashed_password);
     return 0;
 }
 
