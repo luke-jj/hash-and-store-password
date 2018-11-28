@@ -32,7 +32,7 @@
 
 /*
  * Simple demo program that demonstrates hashing and storing a user-password.
- * Cesar-Cipher vs SHA-256 vs bcrypt
+ * Caesar-Cipher vs SHA-256 vs bcrypt
  *
  * WARNING: This program does intentionally not implement error handling
  * such as checking whether a file was opened correctly, user input is valid,
@@ -93,23 +93,18 @@ char *Userdata_tostring(struct Userdata *data)
 
 
 
-
-
-/* TODO: open connection */
-
-
+/* function stub */
 void store(char *username, char *encrypted_password)
 {
 }
 
 
 /*
- * Hashing the input with cesars cipher.
+ * Hashing the input with caesars cipher.
  */
 char *hash(char *password)
 {
     char *cipher = malloc(sizeof(password));
-    // caesar-cipher just for fun ^_^
     for (int i = 0; i < strlen(password); i++) {
         cipher[i] = password[i] + 1;
     }
@@ -151,7 +146,7 @@ int register_user()
                 is_alnum = 0;
             }
         }
-        if (strlen(username) < 10 && is_alnum) {
+        if (strlen(username) < 11 && is_alnum) {
             username_is_valid = 1;
         }
 
@@ -170,7 +165,7 @@ int register_user()
                 is_alnum = 0;
             }
         }
-        if (strlen(password) < 10 && is_alnum) {
+        if (strlen(password) < 9 && is_alnum) {
             password_is_valid = 1;
         }
     }
