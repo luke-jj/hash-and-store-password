@@ -51,9 +51,10 @@
  * in a file on the local disk.
  */
 struct Userdata {
-    int     id;
-    char    username[11];
-    char    password[9];
+    int                 id;
+    char                username[11];
+    char                password[9];
+    int                 set;
 };
 
 struct Database {
@@ -67,8 +68,12 @@ struct Connection {
 
 
 
+
+
 /*
  * Open connection to the database file
+ * @param       *char           path to the database file
+ * @return      *Connection     fully initialized connection
  */
 struct Connection *connect(const char *filename)
 {
@@ -79,23 +84,88 @@ struct Connection *connect(const char *filename)
     return connection;
 }
 
-
-char *Userdata_tostring(struct Userdata *data)
+/*
+ * Read the database file contents into memory through the 'file' stream
+ * Populate the Database structure in 'connection' with data read from file
+ */
+void Database_load(struct Connection *connection)
 {
-    char *format_string = malloc(sizeof(char) * 32);
-    sprintf(format_string,
-            "%d,%s,%s\n",
-            data->id,
-            data->username,
-            data->password);
-    return format_string;
+    fread(connection->db, sizeof(struct Database), 1, connection->file);
+}
+
+/*
+ * Create a new database in memory
+ */
+void Database_create(struct Connection *connection)
+{
+    for (int i = 0; i < ROWS_MAX; i++) {
+        struct Userdata data;
+        data.id = i;
+        connection->db->rows[i] = data;
+    }
+}
+
+/*
+ * Write database in memory to file stream
+ */
+void Database_write(struct Connection *connection)
+{
+    rewind(connection->file);
+    fwrite(connection->db, sizeof(struct Database), 1, connection->file);
+    fflush(connection->file);
+}
+
+/*
+ * Close database file stream, database in memory, and connection
+ */
+void Database_close(struct Connection *connection)
+{
+    fclose(connection->file);
+    free(connection->db);
+    free(connection);
 }
 
 
 
-/* function stub */
-void store(char *username, char *encrypted_password)
+
+
+/*******************************
+ * CRUD functions for database *
+ * - append                    *
+ *******************************/
+
+/*
+ * append newly registered user data to loaded database
+ */
+void Database_append(struct Connection *connection, char *user, char *pass)
 {
+    struct Userdata *data;
+    for (int i = 0; i < ROWS_MAX; i++) {
+        data = &connection->db->rows[i];
+        if (!data->set) {
+            strcpy(data->username, user);
+            strcpy(data->password, pass);
+            data->set = 1;
+            break;
+        }
+    }
+}
+
+
+
+
+
+
+/*
+ * Store new user registration details in database
+ */
+void store(char *username, char *password)
+{
+    struct Connection *connection = connect("assets/user.db");
+    Database_load(connection);
+    Database_append(connection, username, password);
+    Database_write(connection);
+    Database_close(connection);
 }
 
 
@@ -184,10 +254,28 @@ int register_user()
 
 /*
  * main-menu feature that asks for and validates a users login details
+ * TODO: complete feature
+ *
  * @return      int     standard error code
  */
 int login()
 {
+    return 0;
+}
+
+/*
+ * main-menu feature - Create new database file
+ * this function will delete the old database file
+ * @return      int     standard error code
+ */
+int create_db()
+{
+    struct Connection *connection = connect("assets/user.db");
+    Database_create(connection);
+    Database_write(connection);
+    Database_close(connection);
+    printf("New database file created\n");
+
     return 0;
 }
 
@@ -200,10 +288,11 @@ void main_menu()
     char user_input;
 
     while(1) {
-        clear_screen();
+        /* clear_screen(); */
         printf("You are logged in as:  %s\n", login_name);
         printf("Register new user: [R]\n");
         printf("Log-in as existing user: [L]\n");
+        printf("Create new database (deletes old records): [C]\n");
         printf("Exit: [Q]\n");
         printf(" >  ");
         scanf(" %c", &user_input);
@@ -214,6 +303,9 @@ void main_menu()
                 break;
             case 'l':
                 login();
+                break;
+            case 'c':
+                create_db();
                 break;
             case 'q':
                 exit(0);
