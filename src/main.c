@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 - Luca Joos - MIT License
+ * Copyright (c) 2018 - MIT License
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -20,7 +20,7 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * @author  Luca Joos
+ * @author  Luca J
  * @date    2018-11-28
  */
 #include <ctype.h>
@@ -98,6 +98,8 @@ void Database_load(struct Connection *connection)
 
 /*
  * Create a new database in memory
+ * database is indexed and otherwise empty,
+ * number of rows is specified by the ROWS_MAX constant
  */
 void Database_create(struct Connection *connection)
 {
@@ -119,7 +121,7 @@ void Database_write(struct Connection *connection)
 }
 
 /*
- * Close database file stream, database in memory, and connection
+ * Close database file stream, free database in memory, and connection
  */
 void Database_close(struct Connection *connection)
 {
@@ -132,9 +134,19 @@ void Database_close(struct Connection *connection)
 
 /***********************************
  * CRUD functions for database     *
+ * - get                           *
  * - append                        *
- * - TODO: implement linear search *
+ * - linear_search                 *
  ***********************************/
+
+/*
+ * get userdata by index
+ * TODO: tests
+ */
+struct Userdata *Database_get(struct Connection *connection, int index)
+{
+    return &connection->db->rows[index];
+}
 
 /*
  * append newly registered user data to loaded database
@@ -153,8 +165,34 @@ void Database_append(struct Connection *connection, char *user, char *pass)
     }
 }
 
+/*
+ * search for username
+ * @param   char*   username
+ * @return  int     index associated with username
+ * TODO: tests
+ */
+int Database_linear_search(struct Connection *connection, char *user)
+{
+    printf("linear search username: %s\n", connection->db->rows[0].username);
+    for(int i = 0; i < ROWS_MAX; i++) {
+        if (connection->db->rows[i].username == user) {
+            return i;
+        }
+    }
+    return -1;
+}
 
 
+
+
+/*
+ * print contents of a usedata record
+ */
+void Userdata_print(struct Userdata *data)
+{
+    printf("Index: %d, Username: %s, Password: %s\n",
+            data->id, data->username, data->password);
+}
 
 /*
  * Hashing the input with caesars cipher.
@@ -177,6 +215,52 @@ void store(char *username, char *password)
     Database_load(connection);
     Database_append(connection, username, password);
     Database_write(connection);
+    Database_close(connection);
+}
+
+/*
+ * Verify user login details
+ * @return      int     true or false
+ */
+int verify(char *username, char *password)
+{
+    int index;
+    char *hashed_password;
+    struct Userdata *data;
+
+    struct Connection *connection = connect("assets/user.db");
+    Database_load(connection);
+    printf("entered username: %s\n", username);
+    printf("entered password: %s\n", password);
+    index = Database_linear_search(connection, username);
+    printf("Index returned: %d\n", index);
+    data = Database_get(connection, index);
+    hashed_password = hash(password);
+    printf("hashed_password: %s\n", hashed_password);
+    printf("returned password: %s\n", data->password);
+    if (data->password == hashed_password) {
+        free(hashed_password);
+        Database_close(connection);
+        return 1;
+    }
+    free(hashed_password);
+    Database_close(connection);
+    return 0;
+}
+
+/*
+ * print all database entries
+ */
+void list()
+{
+    struct Userdata *data;
+    struct Connection *connection = connect("assets/user.db");
+
+    Database_load(connection);
+    for (int i = 0; i < ROWS_MAX; i++) {
+        data = Database_get(connection, i);
+        Userdata_print(data);
+    }
     Database_close(connection);
 }
 
@@ -253,12 +337,29 @@ int register_user()
 
 /*
  * main-menu feature that asks for and validates a users login details
- * TODO: complete feature
  *
  * @return      int     standard error code
  */
-int login()
+int login(char * login_name)
 {
+    char username[64];
+    char password[64];
+    int is_verified;
+
+    printf("Login username:\n");
+    printf(" >  ");
+    scanf("%s", username);
+    printf("Password:\n");
+    printf(" >  ");
+    scanf("%s", password);
+
+    is_verified = verify(username, password);
+    if (is_verified) {
+        login_name = username;
+        printf("login successful\n");
+    } else {
+        printf("username or password did not match\n");
+    }
     return 0;
 }
 
@@ -290,7 +391,8 @@ void main_menu()
         /* clear_screen(); */
         printf("You are logged in as:  %s\n", login_name);
         printf("Register new user: [R]\n");
-        printf("Log-in as existing user: [L]\n");
+        printf("Sign-in as existing user: [S]\n");
+        printf("List database record: [L]\n");
         printf("Reset and re-initialize database (deletes old records): [C]\n");
         printf("Exit: [Q]\n");
         printf(" >  ");
@@ -300,8 +402,11 @@ void main_menu()
             case 'r':
                 register_user();
                 break;
+            case 's':
+                login(login_name);
+                break;
             case 'l':
-                login();
+                list();
                 break;
             case 'c':
                 create_db();
